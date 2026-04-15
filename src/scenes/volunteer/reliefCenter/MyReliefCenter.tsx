@@ -79,8 +79,8 @@ const MyReliefCenter: React.FC = () => {
       }
     };
     return rowData.Status === "dispatched" ? (
-      <Button variant="outlined" size="small" color="info" onClick={handleDelivery}>
-        Confirm
+      <Button variant="contained" size="small" color="info" onClick={handleDelivery}>
+        Received
       </Button>
     ) : null;
   };
@@ -89,7 +89,24 @@ const MyReliefCenter: React.FC = () => {
     { field: "CenterName", headerName: "Center Name", width: 200 },
     { field: "ItemName", headerName: "Item", width: 250 },
     { field: "Quantity", headerName: "Quantity", width: 100 },
-    { field: "Status", headerName: "Status", width: 130 },
+    { 
+      field: "Status", 
+      headerName: "Status", 
+      width: 250,
+      renderCell: (params) => {
+        const { Status, AcceptedByName } = params.row;
+        if (Status === 'accepted') {
+          return `Accepted by ${AcceptedByName || 'a Collection Center'}`;
+        }
+        if (Status === 'dispatched') {
+          return "Out for delivery";
+        }
+        if (Status === 'delivered') {
+          return "Delivered";
+        }
+        return Status;
+      }
+    },
     {
       field: "confirm",
       headerName: "Action",
@@ -144,7 +161,13 @@ const MyReliefCenter: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const form = { ...reliefForm, InCharge: userId };
+    const form = { 
+      ...reliefForm, 
+      latitude: Number(reliefForm.latitude),
+      longitude: Number(reliefForm.longitude),
+      Capacity: Number(reliefForm.Capacity),
+      InCharge: userId 
+    };
     try {
       await reliefApi.createCenter(form);
       toast.success("Relief Center Created");

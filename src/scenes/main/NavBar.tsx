@@ -24,21 +24,21 @@ interface NavItem {
   link: string;
 }
 
-const mainNavItems: NavItem[] = [
+// Public pages — shown when no one is logged in
+const publicNavItems: NavItem[] = [
   { name: "Home", link: "/" },
   { name: "Do's and Don'ts", link: "/do&donts" },
   { name: "Support", link: "/Donate" },
   { name: "News Feed", link: "/NewsFeed" },
 ];
 
-const reliefNavItems: NavItem[] = [
-  ...mainNavItems,
+// Role-specific pages — no public items mixed in
+const reliefOnlyItems: NavItem[] = [
   { name: "Relief Centers", link: "/agency/relief-center" },
   { name: "My Relief Center", link: "/agency/my-relief-center" },
 ];
 
-const collectionNavItems: NavItem[] = [
-  ...mainNavItems,
+const collectionOnlyItems: NavItem[] = [
   { name: "Collection Centers", link: "/agency/collection-center" },
   { name: "My Collection Center", link: "/agency/my-collection-center" },
 ];
@@ -62,15 +62,15 @@ const NavBar: React.FC<DrawerAppBarProps> = (props) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItemsByRole: Record<Role | "default", NavItem[]> = {
-    default: mainNavItems,
-    reliefCenter: reliefNavItems,
-    collectionCenter: collectionNavItems,
-    admin: [...mainNavItems, ...reliefNavItems, ...collectionNavItems], // Access to all
+    default: publicNavItems,
+    reliefCenter: reliefOnlyItems,
+    collectionCenter: collectionOnlyItems,
+    admin: [...publicNavItems, ...reliefOnlyItems, ...collectionOnlyItems],
   };
 
-  let currentNavItems = mainNavItems;
+  let currentNavItems = publicNavItems;
   if (isAuthenticated && user && user.role) {
-    currentNavItems = navItemsByRole[user.role] || mainNavItems;
+    currentNavItems = navItemsByRole[user.role] || publicNavItems;
   }
 
   const handleDrawerToggle = () => {

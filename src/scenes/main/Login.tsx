@@ -21,6 +21,7 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setFieldErrors({});
 
     try {
       const response = await authApi.login({ email, password });
@@ -42,15 +44,25 @@ const Login: React.FC = () => {
       if (user.role === "admin") {
         navigate("/agency/home");
       } else if (user.role === "reliefCenter") {
-        navigate("/my-relief-center");
+        navigate("/agency/my-relief-center");
       } else if (user.role === "collectionCenter") {
-        navigate("/my-collection-center");
+        navigate("/agency/my-collection-center");
       } else {
         navigate("/");
       }
     } catch (err: unknown) {
       const error = err as ApiError;
-      toast.error(error.message || "Login failed. Please check your credentials.");
+      
+      // Show field-level errors inline under each field
+      if (error.errors && typeof error.errors === "object") {
+        setFieldErrors(error.errors);
+      }
+
+      // Show a descriptive toast: prefer field-specific message over generic
+      const firstFieldError = error.errors
+        ? Object.values(error.errors)[0]
+        : null;
+      toast.error(firstFieldError || error.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -87,7 +99,9 @@ const Login: React.FC = () => {
             required
             margin="normal"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); setFieldErrors((prev) => ({ ...prev, email: "" })); }}
+            error={!!fieldErrors.email}
+            helperText={fieldErrors.email}
           />
           <TextField
             label="Password"
@@ -97,7 +111,9 @@ const Login: React.FC = () => {
             required
             margin="normal"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { setPassword(e.target.value); setFieldErrors((prev) => ({ ...prev, password: "" })); }}
+            error={!!fieldErrors.password}
+            helperText={fieldErrors.password}
           />
           <Button
             type="submit"

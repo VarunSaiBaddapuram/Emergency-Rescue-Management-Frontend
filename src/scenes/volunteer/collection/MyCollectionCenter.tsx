@@ -26,6 +26,9 @@ interface CollectionForm {
   CenterName: string;
   Phone: string;
   Address: string;
+  email: string;
+  latitude: string;
+  longitude: string;
 }
 
 const modalStyle = {
@@ -56,6 +59,9 @@ const MyCollectionCenter: React.FC = () => {
     CenterName: "",
     Phone: "",
     Address: "",
+    email: user?.email || "",
+    latitude: "",
+    longitude: "",
   });
 
   const handleClose = () => setOpen(false);
@@ -86,15 +92,30 @@ const MyCollectionCenter: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (!collectionForm.latitude || !collectionForm.longitude) {
+      toast.error("Location data is missing. Please enable location services.");
+      return;
+    }
+
     const form = {
       ...collectionForm,
+      latitude: Number(collectionForm.latitude),
+      longitude: Number(collectionForm.longitude),
       InCharge: userId,
     };
 
     try {
       await collectionApi.createCenter(form);
       toast.success("Collection Center Created");
-      setCollectionForm({ CenterName: "", Phone: "", Address: "" });
+      setCollectionForm({
+        CenterName: "",
+        Phone: "",
+        Address: "",
+        email: user?.email || "",
+        latitude: "",
+        longitude: "",
+      });
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to create center");
@@ -127,7 +148,24 @@ const MyCollectionCenter: React.FC = () => {
   }, [userId]);
 
   const acceptDelivery = async (rowData: ReliefSupplyRequest) => {
-    const form = { Status: "accepted", AcceptedBy: userId };
+    let centerName = collectionCenterData[0]?.CenterName;
+    
+    // If center data hasn't loaded yet for some reason, try to fetch it now
+    if (!centerName && userId) {
+      try {
+        const data = await collectionApi.getCenterByIncharge(userId);
+        const dataArr = Array.isArray(data) ? data : (data ? [data as CollectionCenter] : []);
+        centerName = dataArr[0]?.CenterName;
+      } catch (err) {
+        console.error("Failed to fetch center name during acceptance:", err);
+      }
+    }
+
+    const form = { 
+      Status: "accepted", 
+      AcceptedBy: userId,
+      AcceptedByName: centerName || "A Collection Center"
+    };
     try {
       await collectionApi.acceptDelivery(rowData._id, form);
       toast.success("Accepted Successfully");
@@ -143,7 +181,7 @@ const MyCollectionCenter: React.FC = () => {
       return toast.warning("Please enter driver contact number");
     }
     try {
-      await collectionApi.dispatchItem(id, { phone: driverNo });
+      await collectionApi.dispatchItem(id, { DeliveryContact: driverNo });
       toast.success("Dispatched Successfully");
       refreshRows();
       refreshDispatchRows();
@@ -189,17 +227,34 @@ const MyCollectionCenter: React.FC = () => {
     {
       field: "action",
       headerName: "Action",
-      width: 150,
-      renderCell: (params) => (
-        <Button
-          variant="contained"
-          size="small"
-          color="success"
-          onClick={() => openDispatchModal(params.row)}
-        >
-          Dispatch Item
-        </Button>
-      ),
+      width: 180,
+      renderCell: (params) => {
+        const status = params.row.Status;
+        if (status === 'dispatched') {
+          return (
+            <Typography variant="body2" color="primary.main" fontWeight="bold">
+              🚚 Delivering
+            </Typography>
+          );
+        }
+        if (status === 'delivered') {
+          return (
+            <Typography variant="body2" color="success.main" fontWeight="bold">
+              ✅ Delivered
+            </Typography>
+          );
+        }
+        return (
+          <Button
+            variant="contained"
+            size="small"
+            color="success"
+            onClick={() => openDispatchModal(params.row)}
+          >
+            Dispatch Item
+          </Button>
+        );
+      },
     },
   ];
 
@@ -273,6 +328,41 @@ const MyCollectionCenter: React.FC = () => {
                 onChange={handleChange}
                 required
               />
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Email Address"
+                    name="email"
+                    type="email"
+                    value={collectionForm.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Latitude"
+                    name="latitude"
+                    type="number"
+                    value={collectionForm.latitude}
+                    onChange={handleChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Longitude"
+                    name="longitude"
+                    type="number"
+                    value={collectionForm.longitude}
+                    onChange={handleChange}
+                    required
+                  />
+                </Grid>
+              </Grid>
               <Button type="submit" variant="contained" fullWidth size="large" sx={{ py: 1.5 }}>
                 Create Collection Hub
               </Button>

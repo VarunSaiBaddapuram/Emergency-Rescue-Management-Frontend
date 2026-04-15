@@ -21,5 +21,6 @@ export interface ReliefSupplyRequest {
   Requester: string;
   Status: 'pending' | 'accepted' | 'dispatched' | 'delivered';
   AcceptedBy?: string;
+  AcceptedByName?: string;
   DriverPhone?: string;
 }

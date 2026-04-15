@@ -24,6 +24,7 @@ const Register: React.FC = () => {
     email: "",
     phoneNumber: "",
     password: "",
+    confirmPassword: "",
     role: "reliefCenter" as Role,
     agencyKey: "",
   });
@@ -151,6 +152,18 @@ const Register: React.FC = () => {
                 type="password"
                 required
                 value={formData.password}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Confirm Password"
+                name="confirmPassword"
+                placeholder="Confirm Password"
+                type="password"
+                required
+                value={formData.confirmPassword}
                 onChange={handleChange}
               />
             </Grid>
